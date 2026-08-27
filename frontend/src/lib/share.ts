@@ -2,9 +2,11 @@ import type { DailyChallenge, DailyResult } from "../api/types";
 import { formatDateBR } from "./date";
 
 function emojiForScore(score: number): string {
-  if (score >= 100) return "🟩";
-  if (score >= 50) return "🟨";
-  return "🟥";
+  if (score >= 100) return "✅"; // cravou a posição
+  if (score >= 90) return "🟩";
+  if (score >= 75) return "🟨";
+  if (score >= 50) return "🟥";
+  return "💀";
 }
 
 export function buildShareText(challenge: DailyChallenge, result: DailyResult): string {

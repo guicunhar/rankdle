@@ -12,9 +12,10 @@ const directionCopy: Record<GuessResult["direction"], { label: string; icon: typ
   higher: { label: "A resposta está mais acima", icon: ChevronUp },
 };
 
+// Mesmas faixas dos emojis em lib/share.ts (✅/🟩 ≥90, 🟨 75-89, 🟥/💀 <75).
 function scoreColor(score: number): string {
-  if (score >= 100) return "text-good";
-  if (score >= 50) return "text-accent-400";
+  if (score >= 90) return "text-good";
+  if (score >= 75) return "text-accent-400";
   return "text-bad";
 }
 
