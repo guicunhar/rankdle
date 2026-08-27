@@ -134,6 +134,41 @@ export default function Game() {
               </p>
             )}
           </div>
+          {resultQuery.data && resultQuery.data.players_count > 0 && (
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-ink-800 bg-ink-950 p-4 text-sm">
+              <div>
+                <dt className="text-ink-400">Jogaram hoje</dt>
+                <dd className="font-mono text-base font-bold text-ink-50">
+                  {resultQuery.data.players_count}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-ink-400">Cravaram a posição</dt>
+                <dd className="font-mono text-base font-bold text-ink-50">
+                  {resultQuery.data.exact_hit_count}
+                  <span className="ml-1 text-xs font-normal text-ink-500">
+                    ({Math.round((resultQuery.data.exact_hit_count / resultQuery.data.players_count) * 100)}%)
+                  </span>
+                </dd>
+              </div>
+              {resultQuery.data.closest_score != null && (
+                <div>
+                  <dt className="text-ink-400">Melhor pontuação</dt>
+                  <dd className="font-mono text-base font-bold text-ink-50">
+                    {resultQuery.data.closest_score}/100
+                  </dd>
+                </div>
+              )}
+              {resultQuery.data.average_score != null && (
+                <div>
+                  <dt className="text-ink-400">Média</dt>
+                  <dd className="font-mono text-base font-bold text-ink-50">
+                    {Math.round(resultQuery.data.average_score)}/100
+                  </dd>
+                </div>
+              )}
+            </dl>
+          )}
           {resultQuery.data && <ShareCard challenge={challenge} result={resultQuery.data} />}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold">
             {hasOtherThemes && (
