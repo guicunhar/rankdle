@@ -243,16 +243,35 @@ GitHub Actions atrasa e é pausado após 60 dias sem commit).
 **6. Popular o ranking do dia (em produção)**
 
 As migrations rodam sozinhas a cada deploy. Para importar rankings **não precisa
-de shell no Render** — rode os scripts localmente apontando para o Neon:
+de shell no Render** — rode localmente apontando para o Neon.
+
+Guarde a string de produção uma vez em `backend/.env.prod.local` (fora do git —
+veja `backend/.env.prod.local.example`):
+
+```
+RANKDLE_DATABASE_URL=postgresql+psycopg://USER:PASS@HOST/neondb?sslmode=require
+```
+
+Depois, publicar um ranking é um comando só — **data, nome do arquivo e
+subtítulo** (tema `aleatorio` por padrão):
 
 ```powershell
 cd backend
-$env:RANKDLE_DATABASE_URL = "postgresql+psycopg://USER:PASS@HOST/neondb?sslmode=require"
-python scripts/import_ranking.py --csv ../data/rankings/ARQUIVO.csv --date AAAA-MM-DD --theme aleatorio --subtitle "..."
-python scripts/set_theme_active.py --theme aleatorio --active true
+.venv\Scripts\Activate.ps1
+python scripts/publish_ranking.py 2026-08-28 steam_pico_diario "Jogos da Steam com Maior Pico Diário de Jogadores"
 ```
 
-(No bash/Linux: `RANKDLE_DATABASE_URL="..." python scripts/import_ranking.py ...`)
+- A data aceita `AAAA-MM-DD` ou `hoje`.
+- O arquivo é só o nome — sempre procurado em `data/rankings/` (o `.csv` é
+  opcional).
+- `publish_ranking.py` importa o CSV (gabarito sorteado) **e** ativa o tema.
+  Sobrescreve com `--theme`, `--theme-name`, `--theme-icon`, `--target-rank`.
+- Para ver o que já está cadastrado / programado:
+  ```powershell
+  python scripts/list_rankings.py --upcoming
+  ```
+- Os scripts de baixo nível (`import_ranking.py`, `set_theme_active.py`)
+  continuam disponíveis para casos manuais.
 
 **7. Atualizar**
 

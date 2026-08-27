@@ -79,18 +79,36 @@ def read_rows(csv_path: Path) -> list[dict]:
             )
 
         rows = []
-        for row in reader:
+        for line_no, row in enumerate(reader, start=2):  # 1 is the header
             if not row.get(rank_col, "").strip() or not row.get(name_col, "").strip():
                 continue  # skip blank trailing rows some spreadsheet exports leave behind
+            try:
+                rank = int(row[rank_col].strip())
+            except ValueError:
+                raise SystemExit(
+                    f"Linha {line_no}: posição (rank) inválida: {row[rank_col]!r} — precisa ser um número inteiro"
+                )
             rows.append(
                 {
-                    "rank": int(row[rank_col]),
+                    "rank": rank,
                     "name": row[name_col].strip(),
                     "image_url": (row.get(image_col, "") if image_col else "").strip() or None,
                 }
             )
     if not rows:
         raise SystemExit("CSV has no data rows")
+
+    seen: dict[int, str] = {}
+    dups: list[str] = []
+    for r in rows:
+        if r["rank"] in seen:
+            dups.append(f"{r['rank']} ({seen[r['rank']]!r} e {r['name']!r})")
+        seen[r["rank"]] = r["name"]
+    if dups:
+        raise SystemExit(
+            "CSV tem posições (rank) repetidas — cada linha precisa de um número único:\n  "
+            + "\n  ".join(dups)
+        )
     return rows
 
 

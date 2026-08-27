@@ -7,7 +7,9 @@ __pycache__/
 
 # Env files
 .env
+.env.*.local
 !.env.example
+!.env.prod.local.example
 
 # Node
 node_modules/
