@@ -3,12 +3,13 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import AdSlot from "./AdSlot";
+import HowToPlay from "./HowToPlay";
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-full flex-col">
       <header className="border-b border-ink-800">
-        <div className="mx-auto flex max-w-2xl items-center px-4 py-4">
+        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-4">
           <Link to="/" className="flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent-500 text-ink-950">
               <ListOrdered size={18} strokeWidth={2.5} />
@@ -17,6 +18,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               rankdle
             </span>
           </Link>
+          <HowToPlay />
         </div>
       </header>
 
