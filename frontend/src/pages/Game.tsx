@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowRight, PartyPopper } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { fetchDaily, fetchResult, submitGuess } from "../api/endpoints";
+import { fetchDaily, fetchResult, fetchThemes, submitGuess } from "../api/endpoints";
 import type { SearchItem } from "../api/types";
 import GuessHistory from "../components/GuessHistory";
 import LivesIndicator from "../components/LivesIndicator";
@@ -27,6 +27,11 @@ export default function Game() {
   });
 
   const challenge = dailyQuery.data;
+
+  // Only worth offering "play another theme" when there actually is another
+  // one active. Shares React Query's cache with the Home picker.
+  const { data: themes } = useQuery({ queryKey: ["themes"], queryFn: fetchThemes });
+  const hasOtherThemes = (themes?.length ?? 0) > 1;
 
   const resultQuery = useQuery({
     queryKey: ["result", challenge?.id],
@@ -131,10 +136,14 @@ export default function Game() {
           </div>
           {resultQuery.data && <ShareCard challenge={challenge} result={resultQuery.data} />}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold">
-            <Link to="/" className="text-accent-400 hover:underline">
-              Jogar outro tema hoje
-            </Link>
-            <span className="text-ink-700">·</span>
+            {hasOtherThemes && (
+              <>
+                <Link to="/" className="text-accent-400 hover:underline">
+                  Jogar outro tema hoje
+                </Link>
+                <span className="text-ink-700">·</span>
+              </>
+            )}
             <Link to={`/arquivo/${themeSlug}`} className="text-accent-400 hover:underline">
               Jogar um dia anterior
             </Link>
