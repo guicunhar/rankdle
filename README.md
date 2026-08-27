@@ -32,8 +32,14 @@ backend/    FastAPI + SQLAlchemy + Alembic (API do jogo)
 frontend/   React + TypeScript + Vite (interface)
 data/samples/    CSVs de exemplo (placeholder) para os 4 temas
 data/rankings/   onde você salva os CSVs reais que for importar
-docker-compose.yml   sobe Postgres + backend + frontend juntos
+docker-compose.yml       sobe Postgres + backend + frontend juntos (dev)
+docker-compose.prod.yml  stack de produção num VPS (backend + Caddy + Postgres)
+render.yaml              blueprint do backend no Render (deploy grátis)
+frontend/vercel.json     config do frontend na Vercel
+backend/start.sh          entrypoint do container: roda migrations + uvicorn
 ```
+
+Detalhes de hospedagem em [Deploy](#deploy).
 
 ## Rodando localmente
 
@@ -165,6 +171,119 @@ cd backend
 pytest
 ```
 
+## Deploy
+
+Dois caminhos, ambos com os arquivos de config já no repo. O site em produção
+roda hoje na **Opção 1**, sob o domínio `rankdle.xyz`.
+
+### Opção 1 — Grátis: Vercel + Render + Neon (em uso)
+
+```
+rankdle.xyz + www   →  Vercel   (frontend estático)
+api.rankdle.xyz     →  Render   (backend FastAPI, plano free)
+Postgres            →  Neon     (grátis, não expira)
+```
+
+Arquivos: `render.yaml`, `frontend/vercel.json`, `backend/start.sh`,
+`.github/workflows/keep-render-awake.yml`.
+
+**1. Banco — [Neon](https://neon.tech)**
+
+- Crie um projeto e copie a *connection string*.
+- Troque o prefixo `postgresql://` por `postgresql+psycopg://` (o resto igual).
+- Prefira a conexão **direta** (sem `-pooler` no host): o pooler PgBouncer do
+  Neon briga com o Alembic + psycopg3. Para um projeto pequeno não faz falta.
+
+**2. Backend — [Render](https://render.com)**
+
+- **New → Blueprint** (lê o `render.yaml`) ou **New → Web Service** manual com:
+  - Runtime **Docker** · Root Directory `backend` · Instance Type **Free**
+  - Health Check Path `/api/v1/health`
+  - Campo **Docker Command** deixado **vazio** — usa o `CMD` do Dockerfile
+    (`sh start.sh`), que roda `alembic upgrade head` e sobe o uvicorn na `$PORT`
+    injetada pelo Render.
+- **Environment Variables:**
+  ```
+  RANKDLE_DATABASE_URL   postgresql+psycopg://USER:PASS@HOST/neondb?sslmode=require
+  RANKDLE_JWT_SECRET     (string aleatória longa — ou botão "Generate")
+  RANKDLE_CORS_ORIGINS   ["https://rankdle.xyz","https://www.rankdle.xyz"]
+  ```
+- **Settings → Custom Domains → Add** `api.rankdle.xyz`; anote o alvo CNAME que
+  ele mostra (algo como `rankdle-api.onrender.com`).
+
+**3. Frontend — [Vercel](https://vercel.com)**
+
+- Importe o repo. **Root Directory: `frontend`** (o preset Vite é detectado
+  sozinho). O `frontend/vercel.json` cuida do rewrite das rotas do React Router.
+- **Environment Variable:** `VITE_API_BASE_URL = https://api.rankdle.xyz/api/v1`
+- **Settings → Domains → Add** `rankdle.xyz` e `www.rankdle.xyz`; use os
+  registros DNS exatos que a Vercel indicar.
+
+**4. DNS — Namecheap (Advanced DNS → Host Records)**
+
+Apague os registros de parking (CNAME `www` → `parkingpage.com`, URL Redirect
+Record `@`) e adicione:
+
+| Type  | Host | Value                                      |
+|-------|------|-------------------------------------------|
+| A     | `@`  | o IP que a Vercel indicar (ex. `216.198.79.1`) |
+| CNAME | `www`| o valor que a Vercel indicar (ex. `cname.vercel-dns.com`) |
+| CNAME | `api`| alvo do Render (ex. `rankdle-api.onrender.com`) |
+
+Propagação + emissão dos certificados: de alguns minutos a ~1h.
+
+**5. Anti-hibernação**
+
+O plano free do Render dorme após 15 min sem tráfego (primeira chamada depois
+disso demora ~30–40s). Crie um monitor em [UptimeRobot](https://uptimerobot.com)
+(HTTP, `https://api.rankdle.xyz/api/v1/health`, intervalo 5 min), ou habilite o
+workflow `.github/workflows/keep-render-awake.yml` (menos confiável — o cron do
+GitHub Actions atrasa e é pausado após 60 dias sem commit).
+
+**6. Popular o ranking do dia (em produção)**
+
+As migrations rodam sozinhas a cada deploy. Para importar rankings **não precisa
+de shell no Render** — rode os scripts localmente apontando para o Neon:
+
+```powershell
+cd backend
+$env:RANKDLE_DATABASE_URL = "postgresql+psycopg://USER:PASS@HOST/neondb?sslmode=require"
+python scripts/import_ranking.py --csv ../data/rankings/ARQUIVO.csv --date AAAA-MM-DD --theme aleatorio --subtitle "..."
+python scripts/set_theme_active.py --theme aleatorio --active true
+```
+
+(No bash/Linux: `RANKDLE_DATABASE_URL="..." python scripts/import_ranking.py ...`)
+
+**7. Atualizar**
+
+`git push` na branch `main` → Render e Vercel redeployam automaticamente.
+
+### Opção 2 — VPS único com Docker + Caddy
+
+Um servidor só, tudo sob `rankdle.xyz`, HTTPS automático via Caddy. Mais barato
+(~€4/mês) e com `docker compose exec` direto para importar rankings, mas você
+cuida do servidor (SSH, `apt upgrade`, backups).
+
+Arquivos: `docker-compose.prod.yml`, `frontend/Dockerfile.prod`,
+`frontend/Caddyfile`, `.env.prod.example`.
+
+```bash
+# no VPS (Ubuntu 24.04), com Docker instalado e portas 80/443 abertas
+git clone <repo> rankdle && cd rankdle
+cp .env.prod.example .env      # preencha POSTGRES_PASSWORD e JWT_SECRET
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+DNS: registros `A` para `@` e `www` apontando para o IP do VPS. O Caddy emite o
+certificado Let's Encrypt no primeiro acesso.
+
+Importar um ranking:
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend \
+  python scripts/import_ranking.py --csv data/rankings/ARQUIVO.csv --date AAAA-MM-DD --theme aleatorio --subtitle "..."
+```
+
 ## Monetização (Google AdSense)
 
 O frontend já tem dois espaços reservados de anúncio (`AdSlot`, um em cima e
@@ -173,13 +292,12 @@ um embaixo do conteúdo, em `Layout.tsx`), desligados por padrão
 
 ### Pré-requisito: o site precisa estar no ar, num domínio de verdade
 
-O Google **não aprova sites em `localhost`**. Antes de pedir aprovação no
-AdSense, o Rankdle precisa estar publicado num domínio real (o
-`docker-compose.yml` já deixa isso pronto pra rodar em qualquer VPS, ou você
-pode usar Vercel/Render/Railway pro frontend/backend). Se você ainda não
-decidiu onde hospedar, me avisa que eu ajudo a configurar quando chegar a
-hora — por enquanto, só a etapa "criar a conta e ativar a verificação" já dá
-pra fazer sem o site no ar.
+O Google **não aprova sites em `localhost`**. O Rankdle já está publicado em
+`rankdle.xyz` (veja [Deploy](#deploy)), então esse pré-requisito está atendido —
+é só apontar o AdSense para esse domínio.
+
+No stack da Opção 1, as variáveis `VITE_*` de anúncio abaixo são configuradas
+nas **Environment Variables do projeto na Vercel** (não no `.env` local).
 
 ### Passo a passo
 
@@ -222,5 +340,5 @@ pra fazer sem o site no ar.
 - Importação automática via API/scraping de fontes externas (por ora, a
   curadoria dos rankings é manual, via CSV).
 - Painel admin visual (por ora, importação via linha de comando).
-- Escolha definitiva de hospedagem — a estrutura com Docker roda tanto em
-  Vercel/Render/Railway quanto em um único VPS, sem mudar código.
+- Automatizar a importação do ranking diário (hoje é um comando manual rodado
+  localmente contra o banco de produção — veja [Deploy](#deploy)).

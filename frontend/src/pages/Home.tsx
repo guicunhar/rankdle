@@ -21,6 +21,21 @@ export default function Home() {
     return <Navigate to={`/jogar/${themes[0].slug}`} replace />;
   }
 
+  // Until the themes request resolves we don't know whether there's a choice
+  // to make, so show a neutral loader instead of flashing the "Escolha um
+  // tema" screen right before redirecting into a single theme.
+  if (isLoading) {
+    return <p className="text-sm text-ink-400">Carregando...</p>;
+  }
+
+  if (isError) {
+    return (
+      <p className="rounded-lg border border-bad/30 bg-bad/10 px-4 py-3 text-sm text-bad">
+        Não foi possível carregar os temas agora.
+      </p>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -35,13 +50,6 @@ export default function Home() {
           <Stat icon={Gamepad2} label="jogos" value={me.games_played} />
           <Stat icon={Target} label="cravadas" value={me.exact_hits} />
         </div>
-      )}
-
-      {isLoading && <p className="text-sm text-ink-400">Carregando temas...</p>}
-      {isError && (
-        <p className="rounded-lg border border-bad/30 bg-bad/10 px-4 py-3 text-sm text-bad">
-          Não foi possível carregar os temas agora.
-        </p>
       )}
 
       <div className="flex flex-col gap-2.5">
