@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 
 import { fetchArchive } from "../api/endpoints";
+import { formatDateBR } from "../lib/date";
 
 export default function Archive() {
   const { themeSlug } = useParams<{ themeSlug: string }>();
@@ -35,7 +36,7 @@ export default function Archive() {
             >
               <div className="min-w-0">
                 <div className="truncate font-medium text-ink-100">{entry.subtheme_title}</div>
-                <div className="font-mono text-xs text-ink-500">{entry.date}</div>
+                <div className="font-mono text-xs text-ink-500">{formatDateBR(entry.date)}</div>
               </div>
               {entry.played ? (
                 <span className="shrink-0 rounded-md bg-accent-500 px-2.5 py-1 font-mono text-xs font-bold text-ink-950">

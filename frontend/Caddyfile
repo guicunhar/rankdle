@@ -1,0 +1,20 @@
+# Redireciona www -> apex
+www.rankdle.xyz {
+	redir https://rankdle.xyz{uri} permanent
+}
+
+rankdle.xyz {
+	encode gzip zstd
+
+	# Tudo que começa com /api vai pro backend (uvicorn na porta 8000).
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+
+	# Resto é a SPA: serve o arquivo pedido ou cai no index.html (rotas do React Router).
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

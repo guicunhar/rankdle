@@ -1,6 +1,7 @@
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 
 import type { GuessResult } from "../api/types";
+import { ordinal } from "../lib/ordinal";
 
 // "lower"/"higher" describe the GUESS's rank relative to the answer's rank
 // (backend's direction_for_guess): guess rank lower than the target means the
@@ -30,7 +31,10 @@ export default function GuessHistory({ guesses }: { guesses: GuessResult[] }) {
             className="flex items-center justify-between gap-3 rounded-lg border border-ink-800 bg-ink-900 px-4 py-3"
           >
             <div className="min-w-0">
-              <div className="truncate font-medium text-ink-100">{g.item_name}</div>
+              <div className="flex items-center gap-2">
+                <span className="truncate font-medium text-ink-100">{g.item_name}</span>
+                <span className="shrink-0 font-mono text-xs text-ink-500">{ordinal(g.rank_guessed)}</span>
+              </div>
               <div className="mt-0.5 flex items-center gap-1 text-xs text-ink-400">
                 {Icon && <Icon size={13} strokeWidth={2.5} />}
                 {label}

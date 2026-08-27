@@ -1,0 +1,30 @@
+# Build estático do frontend + Caddy servindo os arquivos e fazendo proxy da API.
+FROM node:20-alpine AS build
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+# URL da API embutida no bundle em tempo de build. Precisa ser absoluta
+# (o api/client.ts usa `new URL()`), mas aponta pro mesmo domínio, então
+# não há CORS entre front e back.
+ARG VITE_API_BASE_URL=https://rankdle.xyz/api/v1
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
+# AdSense (opcional): passe estes build-args se já tiver a conta aprovada.
+ARG VITE_ENABLE_ADS=false
+ARG VITE_ADSENSE_CLIENT_ID=
+ARG VITE_ADSENSE_SLOT_TOP=
+ARG VITE_ADSENSE_SLOT_BOTTOM=
+ENV VITE_ENABLE_ADS=$VITE_ENABLE_ADS \
+    VITE_ADSENSE_CLIENT_ID=$VITE_ADSENSE_CLIENT_ID \
+    VITE_ADSENSE_SLOT_TOP=$VITE_ADSENSE_SLOT_TOP \
+    VITE_ADSENSE_SLOT_BOTTOM=$VITE_ADSENSE_SLOT_BOTTOM
+
+RUN npm run build
+
+FROM caddy:2-alpine
+COPY --from=build /app/dist /srv
+COPY Caddyfile /etc/caddy/Caddyfile

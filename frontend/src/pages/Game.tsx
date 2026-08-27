@@ -9,6 +9,7 @@ import GuessHistory from "../components/GuessHistory";
 import LivesIndicator from "../components/LivesIndicator";
 import SearchBar from "../components/SearchBar";
 import ShareCard from "../components/ShareCard";
+import { formatDateBR } from "../lib/date";
 import { ordinal } from "../lib/ordinal";
 import { iconForTheme } from "../lib/themeIcons";
 
@@ -70,7 +71,7 @@ export default function Game() {
       <div className="rounded-lg border border-ink-800 bg-ink-900 px-5 py-6">
         <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-accent-400">
           <ThemeIcon size={14} strokeWidth={2.5} />
-          {challenge.theme} · {challenge.date}
+          {challenge.theme} · {formatDateBR(challenge.date)}
         </div>
         <h1 className="mt-2 font-display text-lg font-semibold text-ink-50">{challenge.subtheme_title}</h1>
         <p className="mt-3 text-lg text-ink-200">
@@ -124,23 +125,20 @@ export default function Game() {
             {resultQuery.data && (
               <p className="mt-1.5 text-sm text-ink-300">
                 A resposta era <strong className="text-ink-50">{resultQuery.data.answer.name}</strong> (
-                {ordinal(resultQuery.data.answer.rank)} posição).{" "}
-                {resultQuery.data.players_count > 0 && (
-                  <>
-                    {resultQuery.data.exact_hit_count} de {resultQuery.data.players_count} jogadores
-                    cravaram hoje
-                    {resultQuery.data.closest_score !== null &&
-                      ` · pontuação mais próxima: ${resultQuery.data.closest_score}`}
-                    .
-                  </>
-                )}
+                {ordinal(resultQuery.data.answer.rank)} posição).
               </p>
             )}
           </div>
           {resultQuery.data && <ShareCard challenge={challenge} result={resultQuery.data} />}
-          <Link to={`/arquivo/${themeSlug}`} className="text-sm font-semibold text-accent-400 hover:underline">
-            Jogar um dia anterior
-          </Link>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold">
+            <Link to="/" className="text-accent-400 hover:underline">
+              Jogar outro tema hoje
+            </Link>
+            <span className="text-ink-700">·</span>
+            <Link to={`/arquivo/${themeSlug}`} className="text-accent-400 hover:underline">
+              Jogar um dia anterior
+            </Link>
+          </div>
         </div>
       )}
     </div>

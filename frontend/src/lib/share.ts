@@ -1,4 +1,5 @@
 import type { DailyChallenge, DailyResult } from "../api/types";
+import { formatDateBR } from "./date";
 
 function emojiForScore(score: number): string {
   if (score >= 100) return "🟩";
@@ -12,16 +13,11 @@ export function buildShareText(challenge: DailyChallenge, result: DailyResult): 
   const grid = guessEmojis.join("") + blanks;
 
   const lines = [
-    `Rankdle ${challenge.theme_icon} ${challenge.theme} — ${challenge.date}`,
+    `Rankdle ${challenge.theme_icon} ${challenge.theme} — ${formatDateBR(challenge.date)}`,
     challenge.subtheme_title,
     grid,
     `Pontuação: ${result.player_best_score}/100${result.player_exact_hit ? " 🎯" : ""}`,
   ];
-
-  if (result.players_count > 0) {
-    const pct = Math.round((result.exact_hit_count / result.players_count) * 100);
-    lines.push(`Só ${pct}% cravaram hoje!`);
-  }
 
   lines.push(window.location.origin);
 

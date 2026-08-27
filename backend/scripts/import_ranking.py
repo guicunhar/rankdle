@@ -1,21 +1,28 @@
 """Imports a ranked list (CSV) as a daily challenge.
 
-CSV columns: rank,name,image_url (image_url optional, may be blank)
+CSV columns (in Portuguese or English, case-insensitive):
+  ranking / rank        -> the position number
+  descrição / descricao / name -> what's at that position
+  image_url             -> optional, may be omitted entirely or left blank
 
 Usage:
     python scripts/import_ranking.py \
-        --csv ../data/samples/musica_2010.csv \
+        --csv ../data/rankings/musica_2010.csv \
         --date 2026-08-26 \
         --theme musica --theme-name "Música" --theme-icon "🎵" \
-        --subtitle "Músicas mais ouvidas em 2010" \
-        --target-rank 34
+        --subtitle "Músicas mais ouvidas em 2010"
+
+The target position (the day's question) is picked at random from the CSV's
+own range unless you pass --target-rank explicitly.
 
 If --theme doesn't exist yet it is created using --theme-name/--theme-icon.
-Re-running with the same --date/--theme replaces that day's ranking items.
+Re-running with the same --date/--theme replaces that day's ranking items
+(and, unless --target-rank is given, rerolls a new random target).
 """
 
 import argparse
 import csv
+import random
 import sys
 from datetime import date as date_type
 from pathlib import Path
@@ -43,16 +50,43 @@ def get_or_create_theme(db: Session, slug: str, name: str | None, icon: str) -> 
     return theme
 
 
+# Accepts either the Portuguese column names (what you'll actually be sending)
+# or the English ones (used by the existing sample CSVs), case-insensitively.
+RANK_ALIASES = {"ranking", "rank", "posicao", "posição"}
+NAME_ALIASES = {"descricao", "descrição", "name", "nome"}
+IMAGE_ALIASES = {"image_url", "imagem", "foto"}
+
+
+def _normalize_header(header: str) -> str:
+    return header.strip().lower()
+
+
 def read_rows(csv_path: Path) -> list[dict]:
-    with csv_path.open(encoding="utf-8") as fh:
+    with csv_path.open(encoding="utf-8-sig") as fh:
         reader = csv.DictReader(fh)
+        if reader.fieldnames is None:
+            raise SystemExit("CSV has no header row")
+
+        header_map = {_normalize_header(h): h for h in reader.fieldnames}
+        rank_col = next((header_map[a] for a in RANK_ALIASES if a in header_map), None)
+        name_col = next((header_map[a] for a in NAME_ALIASES if a in header_map), None)
+        image_col = next((header_map[a] for a in IMAGE_ALIASES if a in header_map), None)
+
+        if rank_col is None or name_col is None:
+            raise SystemExit(
+                "CSV must have a ranking/rank column and a descrição/descricao/name column. "
+                f"Found columns: {', '.join(reader.fieldnames)}"
+            )
+
         rows = []
         for row in reader:
+            if not row.get(rank_col, "").strip() or not row.get(name_col, "").strip():
+                continue  # skip blank trailing rows some spreadsheet exports leave behind
             rows.append(
                 {
-                    "rank": int(row["rank"]),
-                    "name": row["name"].strip(),
-                    "image_url": (row.get("image_url") or "").strip() or None,
+                    "rank": int(row[rank_col]),
+                    "name": row[name_col].strip(),
+                    "image_url": (row.get(image_col, "") if image_col else "").strip() or None,
                 }
             )
     if not rows:
@@ -69,14 +103,20 @@ def import_ranking(
     theme_name: str | None,
     theme_icon: str,
     subtitle: str,
-    target_rank: int,
+    target_rank: int | None = None,
     lives: int | None = None,
 ) -> DailyChallenge:
     """Core import logic, callable directly from Python (no subprocess / argv involved,
-    which avoids Windows console encoding issues with non-ASCII names)."""
+    which avoids Windows console encoding issues with non-ASCII names).
+
+    `target_rank` is optional: leave it out (the normal case) and a position is
+    picked at random from whatever range the CSV covers, so the answer isn't
+    predictable just from always asking about the same spot."""
     rows = read_rows(csv_path)
     ranks = {r["rank"] for r in rows}
-    if target_rank not in ranks:
+    if target_rank is None:
+        target_rank = random.choice(sorted(ranks))
+    elif target_rank not in ranks:
         raise SystemExit(f"--target-rank {target_rank} is not present in the CSV")
 
     theme = get_or_create_theme(db, theme_slug, theme_name, theme_icon)
@@ -106,13 +146,18 @@ def import_ranking(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--csv", required=True, help="Path to the CSV file (rank,name,image_url)")
+    parser.add_argument("--csv", required=True, help="Path to the CSV file (columns: ranking, descrição)")
     parser.add_argument("--date", required=True, help="Challenge date, YYYY-MM-DD")
     parser.add_argument("--theme", required=True, help="Theme slug, e.g. musica")
     parser.add_argument("--theme-name", default=None, help="Theme display name (needed to create a new theme)")
     parser.add_argument("--theme-icon", default="", help="Theme emoji icon")
     parser.add_argument("--subtitle", required=True, help='Subtheme title, e.g. "Músicas mais ouvidas em 2010"')
-    parser.add_argument("--target-rank", required=True, type=int, help="Which rank is today's question")
+    parser.add_argument(
+        "--target-rank",
+        type=int,
+        default=None,
+        help="Which rank is today's question. Omit to pick one at random from the CSV.",
+    )
     parser.add_argument("--lives", type=int, default=None, help="Override lives just for this challenge")
     return parser.parse_args()
 

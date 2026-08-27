@@ -1,0 +1,29 @@
+# Blueprint do Render para o backend (plano free).
+# No Render: New > Blueprint > conecta este repo > Apply.
+#
+# O banco NÃO fica aqui: use um Postgres grátis do Neon (neon.tech) e cole a
+# connection string em RANKDLE_DATABASE_URL nas env vars do serviço.
+#
+# Free tier hiberna após 15 min sem tráfego — veja .github/workflows/keep-render-awake.yml
+# (ou um monitor tipo UptimeRobot) batendo em /api/v1/health.
+
+services:
+  - type: web
+    name: rankdle-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: oregon
+    branch: main
+    healthCheckPath: /api/v1/health
+    # Free tier não tem preDeployCommand, então roda a migration no start.
+    # $PORT é injetado pelo Render.
+    dockerCommand: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: RANKDLE_DATABASE_URL
+        sync: false          # cole a string do Neon no painel
+      - key: RANKDLE_JWT_SECRET
+        generateValue: true  # Render gera um segredo forte sozinho
+      - key: RANKDLE_CORS_ORIGINS
+        value: '["https://rankdle.xyz","https://www.rankdle.xyz"]'
