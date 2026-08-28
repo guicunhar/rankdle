@@ -11,6 +11,7 @@ import SearchBar from "../components/SearchBar";
 import ShareCard from "../components/ShareCard";
 import { formatDateBR } from "../lib/date";
 import { ordinal } from "../lib/ordinal";
+import { scoreColor } from "../lib/scoreColor";
 import { iconForTheme } from "../lib/themeIcons";
 
 export default function Game() {
@@ -133,6 +134,14 @@ export default function Game() {
                 {ordinal(resultQuery.data.answer.rank)} posição).
               </p>
             )}
+          </div>
+          <div className="flex items-baseline justify-center gap-2 rounded-lg border border-ink-800 bg-ink-950 px-4 py-3 text-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-ink-400">
+              Sua melhor pontuação
+            </span>
+            <span className={`font-mono text-2xl font-bold tabular-nums ${scoreColor(challenge.best_score)}`}>
+              {challenge.best_score}
+            </span>
           </div>
           {resultQuery.data && resultQuery.data.players_count > 0 && (
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-ink-800 bg-ink-950 p-4 text-sm">

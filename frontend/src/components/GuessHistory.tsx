@@ -2,6 +2,7 @@ import { Check, ChevronDown, ChevronUp } from "lucide-react";
 
 import type { GuessResult } from "../api/types";
 import { ordinal } from "../lib/ordinal";
+import { scoreColor } from "../lib/scoreColor";
 
 // "lower"/"higher" describe the GUESS's rank relative to the answer's rank
 // (backend's direction_for_guess): guess rank lower than the target means the
@@ -11,13 +12,6 @@ const directionCopy: Record<GuessResult["direction"], { label: string; icon: typ
   lower: { label: "A resposta está mais abaixo", icon: ChevronDown },
   higher: { label: "A resposta está mais acima", icon: ChevronUp },
 };
-
-// Mesmas faixas dos emojis em lib/share.ts (✅/🟩 ≥90, 🟨 75-89, 🟥/💀 <75).
-function scoreColor(score: number): string {
-  if (score >= 90) return "text-good";
-  if (score >= 75) return "text-accent-400";
-  return "text-bad";
-}
 
 export default function GuessHistory({ guesses }: { guesses: GuessResult[] }) {
   if (guesses.length === 0) return null;
@@ -31,19 +25,26 @@ export default function GuessHistory({ guesses }: { guesses: GuessResult[] }) {
             key={i}
             className="flex items-center justify-between gap-3 rounded-lg border border-ink-800 bg-ink-900 px-4 py-3"
           >
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="truncate font-medium text-ink-100">{g.item_name}</span>
-                <span className="shrink-0 font-mono text-xs text-ink-500">{ordinal(g.rank_guessed)}</span>
-              </div>
-              <div className="mt-0.5 flex items-center gap-1 text-xs text-ink-400">
-                {Icon && <Icon size={13} strokeWidth={2.5} />}
-                {label}
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="shrink-0 font-mono text-xl font-bold tabular-nums text-ink-50">
+                {ordinal(g.rank_guessed)}
+              </span>
+              <div className="min-w-0">
+                <span className="block truncate font-medium text-ink-100">{g.item_name}</span>
+                <div className="mt-0.5 flex items-center gap-1 text-xs text-ink-400">
+                  {Icon && <Icon size={13} strokeWidth={2.5} />}
+                  {label}
+                </div>
               </div>
             </div>
-            <span className={`shrink-0 font-mono text-sm font-bold tabular-nums ${scoreColor(g.score)}`}>
-              {g.score}
-            </span>
+            <div className="shrink-0 text-right">
+              <span className="block text-[10px] font-semibold uppercase tracking-wider text-ink-500">
+                Sua pontuação
+              </span>
+              <span className={`font-mono text-sm font-bold tabular-nums ${scoreColor(g.score)}`}>
+                {g.score}
+              </span>
+            </div>
           </li>
         );
       })}
