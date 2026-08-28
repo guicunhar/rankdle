@@ -97,7 +97,7 @@ export default function SearchBar({ challengeId, disabled, value, onChange }: Pr
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setFocused(true)}
-          placeholder={disabled ? "Jogo encerrado" : "Digite ou toque para ver as opções"}
+          placeholder={disabled ? "Conferindo palpite..." : "Digite ou toque para ver as opções"}
           className="w-full rounded-lg border border-ink-700 bg-ink-900 py-3 pl-10 pr-4 text-base text-ink-50 outline-none placeholder:text-ink-500 focus:border-accent-500 disabled:bg-ink-950 disabled:text-ink-600"
         />
       </div>
