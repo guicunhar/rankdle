@@ -5,6 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
+from app.core.clock import game_today
 from app.models.daily_challenge import DailyChallenge
 from app.models.game_attempt import GameAttempt
 from app.models.ranking_item import RankingItem
@@ -44,7 +45,7 @@ def get_daily(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> DailyChallengeOut:
-    target_date = date or date_type.today()
+    target_date = date or game_today()
     stmt = (
         select(DailyChallenge)
         .join(Theme)
@@ -141,7 +142,7 @@ def get_archive(
     stmt = (
         select(DailyChallenge)
         .join(Theme)
-        .where(Theme.slug == theme, DailyChallenge.date <= date_type.today())
+        .where(Theme.slug == theme, DailyChallenge.date <= game_today())
         .order_by(DailyChallenge.date.desc())
     )
     challenges = list(db.scalars(stmt).all())
