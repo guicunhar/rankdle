@@ -10,20 +10,47 @@ function emojiForScore(score: number): string {
 }
 
 export function buildShareText(challenge: DailyChallenge, result: DailyResult): string {
-  const guessEmojis = result.player_guesses.map((g) => emojiForScore(g.score));
-  const blanks = "⬜".repeat(Math.max(0, challenge.lives_total - guessEmojis.length));
-  const grid = guessEmojis.join("") + blanks;
+  const header = `Rankdle ${challenge.theme_icon} ${challenge.theme} — ${formatDateBR(challenge.date)}`;
 
-  const lines = [
-    `Rankdle ${challenge.theme_icon} ${challenge.theme} — ${formatDateBR(challenge.date)}`,
-    challenge.subtheme_title,
-    grid,
-    `Pontuação: ${result.player_best_score}/100${result.player_exact_hit ? " 🎯" : ""}`,
-  ];
+  const lines =
+    result.mode === "infinite"
+      ? buildInfiniteLines(header, challenge, result)
+      : buildLivesLines(header, challenge, result);
 
   lines.push(window.location.origin);
 
   return lines.join("\n");
+}
+
+function buildLivesLines(
+  header: string,
+  challenge: DailyChallenge,
+  result: DailyResult,
+): string[] {
+  const guessEmojis = result.player_guesses.map((g) => emojiForScore(g.score));
+  const blanks = "⬜".repeat(Math.max(0, challenge.lives_total - guessEmojis.length));
+  const grid = guessEmojis.join("") + blanks;
+
+  return [
+    header,
+    challenge.subtheme_title,
+    grid,
+    `Pontuação: ${result.player_best_score}/100${result.player_exact_hit ? " 🎯" : ""}`,
+  ];
+}
+
+function buildInfiniteLines(
+  header: string,
+  challenge: DailyChallenge,
+  result: DailyResult,
+): string[] {
+  const n = result.player_attempts;
+  const tries = `${n} ${n === 1 ? "tentativa" : "tentativas"}`;
+  const summary = result.player_exact_hit
+    ? `♾️ Cravei em ${tries}! 🎯`
+    : `♾️ Maior pontuação: ${result.player_best_score}/100 após ${tries}`;
+
+  return [header, challenge.subtheme_title, "Modo Infinito", summary];
 }
 
 export function shareUrls(text: string) {

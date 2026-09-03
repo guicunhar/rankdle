@@ -3,33 +3,57 @@ import type {
   ArchiveEntry,
   DailyChallenge,
   DailyResult,
+  GameMode,
   GuessResponse,
   MeInfo,
   SearchItem,
   Theme,
 } from "./types";
 
+// "lives" é o padrão do backend, então só mandamos o parâmetro quando for infinito
+function modeParam(mode: GameMode | undefined) {
+  return mode === "infinite" ? { mode } : {};
+}
+
 export function fetchThemes(): Promise<Theme[]> {
   return apiRequest<Theme[]>("/themes");
 }
 
-export function fetchDaily(themeSlug: string, date?: string): Promise<DailyChallenge> {
-  return apiRequest<DailyChallenge>("/daily", { params: { theme: themeSlug, date } });
+export function fetchDaily(
+  themeSlug: string,
+  date?: string,
+  mode?: GameMode,
+): Promise<DailyChallenge> {
+  return apiRequest<DailyChallenge>("/daily", {
+    params: { theme: themeSlug, date, ...modeParam(mode) },
+  });
 }
 
 export function searchItems(challengeId: number, q: string, limit?: number): Promise<SearchItem[]> {
   return apiRequest<SearchItem[]>(`/daily/${challengeId}/search`, { params: { q, limit } });
 }
 
-export function submitGuess(challengeId: number, itemId: number): Promise<GuessResponse> {
+export function submitGuess(
+  challengeId: number,
+  itemId: number,
+  mode?: GameMode,
+): Promise<GuessResponse> {
   return apiRequest<GuessResponse>(`/daily/${challengeId}/guess`, {
     method: "POST",
+    params: modeParam(mode),
     body: { item_id: itemId },
   });
 }
 
-export function fetchResult(challengeId: number): Promise<DailyResult> {
-  return apiRequest<DailyResult>(`/daily/${challengeId}/result`);
+export function giveUp(challengeId: number): Promise<DailyChallenge> {
+  return apiRequest<DailyChallenge>(`/daily/${challengeId}/giveup`, {
+    method: "POST",
+    params: { mode: "infinite" },
+  });
+}
+
+export function fetchResult(challengeId: number, mode?: GameMode): Promise<DailyResult> {
+  return apiRequest<DailyResult>(`/daily/${challengeId}/result`, { params: modeParam(mode) });
 }
 
 export function fetchArchive(themeSlug: string): Promise<ArchiveEntry[]> {

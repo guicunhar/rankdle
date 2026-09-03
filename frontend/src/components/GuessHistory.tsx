@@ -1,4 +1,5 @@
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import type { GuessResult } from "../api/types";
 import { ordinal } from "../lib/ordinal";
@@ -13,11 +14,32 @@ const directionCopy: Record<GuessResult["direction"], { label: string; icon: typ
   higher: { label: "A resposta está mais acima", icon: ChevronUp },
 };
 
-export default function GuessHistory({ guesses }: { guesses: GuessResult[] }) {
+export default function GuessHistory({
+  guesses,
+  limitHeight = false,
+}: {
+  guesses: GuessResult[];
+  // Modo infinito: a lista cresce sem limite, então prendemos a altura em ~5
+  // linhas e deixamos rolar por dentro, mantendo os últimos palpites à vista.
+  limitHeight?: boolean;
+}) {
+  const listRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    if (limitHeight && listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+    }
+  }, [guesses.length, limitHeight]);
+
   if (guesses.length === 0) return null;
 
   return (
-    <ul className="flex flex-col gap-1.5">
+    <ul
+      ref={listRef}
+      className={`flex flex-col gap-1.5 ${
+        limitHeight ? "max-h-[26rem] overflow-y-auto pr-1" : ""
+      }`}
+    >
       {guesses.map((g, i) => {
         const { label, icon: Icon } = directionCopy[g.direction];
         return (
