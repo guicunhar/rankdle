@@ -53,6 +53,7 @@ export interface DailyResult {
   daily_challenge_id: number;
   target_rank: number;
   answer: RevealItem;
+  source_url: string | null;
   player_best_score: number;
   player_exact_hit: boolean;
   player_guesses: GuessResult[];

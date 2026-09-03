@@ -16,6 +16,7 @@ class DailyChallenge(Base):
     subtheme_title: Mapped[str] = mapped_column(String(200))
     target_rank: Mapped[int] = mapped_column(Integer)
     lives_override: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     theme: Mapped["Theme"] = relationship(back_populates="daily_challenges")
     items: Mapped[list["RankingItem"]] = relationship(

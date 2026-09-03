@@ -100,6 +100,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--theme-name", default="Tema Aleatório")
     p.add_argument("--theme-icon", default="🎲")
     p.add_argument("--target-rank", type=int, default=None, help="Fixar a posição-gabarito (padrão: sorteia)")
+    p.add_argument("--source", default=None, help="URL da fonte dos dados, mostrada ao jogador no fim do jogo")
     return p.parse_args()
 
 
@@ -126,6 +127,7 @@ def main() -> None:
             theme_icon=args.theme_icon,
             subtitle=args.subtitle,
             target_rank=args.target_rank,
+            source_url=args.source,
         )
 
         theme = db.query(Theme).filter(Theme.slug == args.theme).first()

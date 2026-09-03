@@ -69,6 +69,7 @@ def sample_challenge(db_session):
         theme_id=theme.id,
         subtheme_title="Músicas mais ouvidas em 2010",
         target_rank=34,
+        source_url="https://example.com/fonte",
     )
     db_session.add(challenge)
     db_session.commit()

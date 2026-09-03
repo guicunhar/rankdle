@@ -123,6 +123,7 @@ def import_ranking(
     subtitle: str,
     target_rank: int | None = None,
     lives: int | None = None,
+    source_url: str | None = None,
 ) -> DailyChallenge:
     """Core import logic, callable directly from Python (no subprocess / argv involved,
     which avoids Windows console encoding issues with non-ASCII names).
@@ -151,6 +152,7 @@ def import_ranking(
     challenge.subtheme_title = subtitle
     challenge.target_rank = target_rank
     challenge.lives_override = lives
+    challenge.source_url = (source_url or "").strip() or None
     db.flush()
 
     db.query(RankingItem).filter(RankingItem.daily_challenge_id == challenge.id).delete()
@@ -170,6 +172,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--theme-name", default=None, help="Theme display name (needed to create a new theme)")
     parser.add_argument("--theme-icon", default="", help="Theme emoji icon")
     parser.add_argument("--subtitle", required=True, help='Subtheme title, e.g. "Músicas mais ouvidas em 2010"')
+    parser.add_argument("--source", default=None, help="URL da fonte dos dados, mostrada ao jogador no fim do jogo")
     parser.add_argument(
         "--target-rank",
         type=int,
@@ -194,6 +197,7 @@ def main() -> None:
             subtitle=args.subtitle,
             target_rank=args.target_rank,
             lives=args.lives,
+            source_url=args.source,
         )
         print(
             f"Imported {len(challenge.items)} items for theme='{args.theme}' date={challenge.date} "

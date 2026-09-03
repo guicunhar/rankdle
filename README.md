@@ -266,12 +266,43 @@ python scripts/publish_ranking.py 2026-08-28 steam_pico_diario "Jogos da Steam c
   opcional).
 - `publish_ranking.py` importa o CSV (gabarito sorteado) **e** ativa o tema.
   Sobrescreve com `--theme`, `--theme-name`, `--theme-icon`, `--target-rank`.
+  `--source "https://..."` guarda a fonte dos dados (link que aparece pro
+  jogador no fim do jogo).
 - Para ver o que já está cadastrado / programado:
   ```powershell
   python scripts/list_rankings.py --upcoming
   ```
 - Os scripts de baixo nível (`import_ranking.py`, `set_theme_active.py`)
   continuam disponíveis para casos manuais.
+
+#### Calendário em JSON (vários dias de uma vez)
+
+Em vez de rodar `publish_ranking.py` por dia, dá pra manter o calendário em
+`data/desafios.json`:
+
+```json
+{
+  "desafios": [
+    {
+      "data": "2026-09-03",
+      "csv": "ranking_cbf",
+      "titulo": "Ranking de clubes da CBF",
+      "fonte": "https://www.cbf.com.br/..."
+    }
+  ]
+}
+```
+
+Obrigatórios: `data`, `csv`, `titulo`, `fonte`. Opcionais: `tema`,
+`tema_nome`, `tema_icone`, `gabarito` (fixa a posição-resposta), `vidas`.
+
+```powershell
+python scripts/publish_schedule.py --dry-run   # confere o que faria
+python scripts/publish_schedule.py             # publica o que ainda não existe
+```
+
+Dias que já têm desafio no banco são **pulados** (pra não re-sortear a
+resposta); use `--force` pra sobrepor ou `--only AAAA-MM-DD` pra um só.
 
 **7. Atualizar**
 

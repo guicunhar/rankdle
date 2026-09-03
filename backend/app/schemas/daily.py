@@ -56,6 +56,7 @@ class DailyResultOut(BaseModel):
     daily_challenge_id: int
     target_rank: int
     answer: RevealItemOut
+    source_url: str | None
     player_best_score: int
     player_exact_hit: bool
     player_guesses: list[GuessResultOut]

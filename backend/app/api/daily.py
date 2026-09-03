@@ -123,6 +123,7 @@ def get_result(
         daily_challenge_id=challenge.id,
         target_rank=challenge.target_rank,
         answer=RevealItemOut(rank=answer.rank, name=answer.name, image_url=answer.image_url),
+        source_url=challenge.source_url,
         player_best_score=attempt.best_score,
         player_exact_hit=attempt.exact_hit,
         player_guesses=guess_results_from_json(attempt.guesses),

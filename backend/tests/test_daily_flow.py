@@ -105,6 +105,7 @@ def test_result_endpoint_reveals_answer_and_stats(client, sample_challenge):
     assert resp.status_code == 200
     data = resp.json()
     assert data["answer"]["name"] == "Item 34"
+    assert data["source_url"] == "https://example.com/fonte"
     assert data["player_best_score"] == 100
     assert data["player_exact_hit"] is True
     assert data["players_count"] == 1

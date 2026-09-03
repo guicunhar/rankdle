@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowRight, PartyPopper } from "lucide-react";
+import { AlertTriangle, ArrowRight, ExternalLink, PartyPopper } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -133,6 +133,17 @@ export default function Game() {
                 A resposta era <strong className="text-ink-50">{resultQuery.data.answer.name}</strong> (
                 {ordinal(resultQuery.data.answer.rank)} posição).
               </p>
+            )}
+            {resultQuery.data?.source_url && (
+              <a
+                href={resultQuery.data.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-accent-400 hover:underline"
+              >
+                <ExternalLink size={13} strokeWidth={2.5} />
+                Fonte dos dados
+              </a>
             )}
           </div>
           <div className="flex items-baseline justify-center gap-2 rounded-lg border border-ink-800 bg-ink-950 px-4 py-3 text-center">

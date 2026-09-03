@@ -1,0 +1,22 @@
+{
+  "desafios": [
+    {
+      "data": "2026-09-03",
+      "csv": "cidades_br",
+      "titulo": "Cidades mais populosas do Brasil",
+      "fonte": "https://www.ibge.gov.br/cidades-e-estados"
+    },
+    {
+      "data": "2026-09-04",
+      "csv": "steam_pico_diario",
+      "titulo": "Jogos da Steam com maior pico diário de jogadores",
+      "fonte": "https://steamdb.info/charts/"
+    },
+    {
+      "data": "2026-09-05",
+      "csv": "top500_spotify",
+      "titulo": "Músicas mais ouvidas da história no Spotify",
+      "fonte": "https://spotifycharts.com/"
+    }
+  ]
+}
