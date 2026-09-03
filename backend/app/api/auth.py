@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
 from app.core.security import create_access_token, hash_password, verify_password
-from app.models.game_attempt import GameAttempt
+from app.models.game_attempt import MODE_LIVES, GameAttempt
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenOut, UpgradeGuestRequest
 
@@ -59,7 +59,12 @@ def upgrade_guest(body: UpgradeGuestRequest, db: Session = Depends(get_db)) -> T
 
 @router.get("/me")
 def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
-    attempts = db.query(GameAttempt).filter(GameAttempt.user_id == user.id).all()
+    # só o jogo diário (5 vidas) conta para o placar pessoal; o modo infinito é treino
+    attempts = (
+        db.query(GameAttempt)
+        .filter(GameAttempt.user_id == user.id, GameAttempt.mode == MODE_LIVES)
+        .all()
+    )
     return {
         "id": user.id,
         "email": user.email,

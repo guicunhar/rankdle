@@ -13,6 +13,8 @@ export interface GuessResult {
   direction: "correct" | "higher" | "lower";
 }
 
+export type GameMode = "lives" | "infinite";
+
 export interface DailyChallenge {
   id: number;
   date: string;
@@ -21,11 +23,13 @@ export interface DailyChallenge {
   subtheme_title: string;
   target_rank: number;
   total_items: number;
+  mode: GameMode;
   lives_total: number;
   lives_remaining: number;
   attempts_used: number;
   guesses: GuessResult[];
   is_over: boolean;
+  gave_up: boolean;
   best_score: number;
 }
 
@@ -38,6 +42,7 @@ export interface SearchItem {
 export interface GuessResponse {
   guess: GuessResult;
   lives_remaining: number;
+  attempts_used: number;
   best_score: number;
   is_over: boolean;
   exact_hit: boolean;
@@ -54,8 +59,11 @@ export interface DailyResult {
   target_rank: number;
   answer: RevealItem;
   source_url: string | null;
+  mode: GameMode;
   player_best_score: number;
   player_exact_hit: boolean;
+  player_gave_up: boolean;
+  player_attempts: number;
   player_guesses: GuessResult[];
   players_count: number;
   exact_hit_count: number;

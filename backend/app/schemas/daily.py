@@ -11,12 +11,14 @@ class DailyChallengeOut(BaseModel):
     subtheme_title: str
     target_rank: int
     total_items: int
+    mode: str  # "lives" | "infinite"
     lives_total: int
     # progress for the requesting player, if a session already exists
     lives_remaining: int
     attempts_used: int
     guesses: list["GuessResultOut"]
     is_over: bool
+    gave_up: bool
     best_score: int
 
 
@@ -41,6 +43,7 @@ class GuessResultOut(BaseModel):
 class GuessResponseOut(BaseModel):
     guess: GuessResultOut
     lives_remaining: int
+    attempts_used: int
     best_score: int
     is_over: bool
     exact_hit: bool
@@ -57,8 +60,11 @@ class DailyResultOut(BaseModel):
     target_rank: int
     answer: RevealItemOut
     source_url: str | None
+    mode: str  # "lives" | "infinite"
     player_best_score: int
     player_exact_hit: bool
+    player_gave_up: bool
+    player_attempts: int
     player_guesses: list[GuessResultOut]
     players_count: int
     exact_hit_count: int

@@ -1,13 +1,16 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.game_attempt import GameAttempt
+from app.models.game_attempt import MODE_LIVES, GameAttempt
 
 
 def compute_challenge_stats(db: Session, daily_challenge_id: int) -> dict:
-    """Aggregates only over attempts that finished (exact hit or lives exhausted)."""
+    """Aggregates only over daily (5-lives) attempts that finished (exact hit or lives
+    exhausted). Infinite-mode attempts are excluded so a player chasing the exact
+    answer with unlimited guesses can't skew the community averages."""
     completed = select(GameAttempt).where(
         GameAttempt.daily_challenge_id == daily_challenge_id,
+        GameAttempt.mode == MODE_LIVES,
         GameAttempt.completed_at.is_not(None),
     )
     attempts = list(db.scalars(completed).all())

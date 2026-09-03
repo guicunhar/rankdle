@@ -1,4 +1,4 @@
-from datetime import date as date_type
+from datetime import date as date_type, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db
 from app.core.clock import game_today
 from app.models.daily_challenge import DailyChallenge
-from app.models.game_attempt import GameAttempt
+from app.models.game_attempt import GAME_MODES, MODE_INFINITE, MODE_LIVES, GameAttempt
 from app.models.ranking_item import RankingItem
 from app.models.theme import Theme
 from app.models.user import User
@@ -38,13 +38,24 @@ def _get_challenge_or_404(db: Session, challenge_id: int) -> DailyChallenge:
     return challenge
 
 
+def _validate_mode(mode: str) -> str:
+    if mode not in GAME_MODES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Unknown game mode: {mode}")
+    return mode
+
+
+ModeQuery = Query(default=MODE_LIVES, description="'lives' (jogo diário) ou 'infinite'")
+
+
 @router.get("/daily", response_model=DailyChallengeOut)
 def get_daily(
     theme: str,
     date: date_type | None = Query(default=None),
+    mode: str = ModeQuery,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> DailyChallengeOut:
+    _validate_mode(mode)
     target_date = date or game_today()
     stmt = (
         select(DailyChallenge)
@@ -55,7 +66,7 @@ def get_daily(
     if challenge is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No challenge for this theme/date")
 
-    attempt = get_or_create_attempt(db, challenge, user)
+    attempt = get_or_create_attempt(db, challenge, user, mode)
     return build_daily_out(challenge, attempt)
 
 
@@ -81,11 +92,13 @@ def search_items(
 def submit_guess(
     challenge_id: int,
     body: GuessRequest,
+    mode: str = ModeQuery,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> GuessResponseOut:
+    _validate_mode(mode)
     challenge = _get_challenge_or_404(db, challenge_id)
-    attempt = get_or_create_attempt(db, challenge, user)
+    attempt = get_or_create_attempt(db, challenge, user, mode)
 
     if attempt.is_over:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Game already finished for this challenge")
@@ -99,20 +112,49 @@ def submit_guess(
     return GuessResponseOut(
         guess=guess,
         lives_remaining=attempt.lives_remaining,
+        attempts_used=attempt.attempts_used,
         best_score=attempt.best_score,
         is_over=attempt.is_over,
         exact_hit=attempt.exact_hit,
     )
 
 
+@router.post("/daily/{challenge_id}/giveup", response_model=DailyChallengeOut)
+def give_up(
+    challenge_id: int,
+    mode: str = ModeQuery,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> DailyChallengeOut:
+    """Encerra uma partida do modo infinito sem cravar a posição, liberando a
+    tela de resultado (que revela a resposta)."""
+    _validate_mode(mode)
+    if mode != MODE_INFINITE:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Só o modo infinito pode ser abandonado")
+
+    challenge = _get_challenge_or_404(db, challenge_id)
+    attempt = get_or_create_attempt(db, challenge, user, mode)
+
+    if not attempt.is_over:
+        attempt.gave_up = True
+        attempt.completed_at = datetime.now(timezone.utc)
+        db.add(attempt)
+        db.commit()
+        db.refresh(attempt)
+
+    return build_daily_out(challenge, attempt)
+
+
 @router.get("/daily/{challenge_id}/result", response_model=DailyResultOut)
 def get_result(
     challenge_id: int,
+    mode: str = ModeQuery,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> DailyResultOut:
+    _validate_mode(mode)
     challenge = _get_challenge_or_404(db, challenge_id)
-    attempt = get_or_create_attempt(db, challenge, user)
+    attempt = get_or_create_attempt(db, challenge, user, mode)
     if not attempt.is_over:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Game is not finished yet")
 
@@ -124,8 +166,11 @@ def get_result(
         target_rank=challenge.target_rank,
         answer=RevealItemOut(rank=answer.rank, name=answer.name, image_url=answer.image_url),
         source_url=challenge.source_url,
+        mode=attempt.mode,
         player_best_score=attempt.best_score,
         player_exact_hit=attempt.exact_hit,
+        player_gave_up=attempt.gave_up,
+        player_attempts=attempt.attempts_used,
         player_guesses=guess_results_from_json(attempt.guesses),
         players_count=stats["players_count"],
         exact_hit_count=stats["exact_hit_count"],
