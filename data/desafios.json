@@ -1,22 +1,46 @@
 {
   "desafios": [
     {
+      "data": "2026-09-02",
+      "csv": "nomes_masc",
+      "titulo": "Nomes masculinos mais comuns no Brasil",
+      "fonte": "https://censo2010.ibge.gov.br/nomes/"
+    },
+    {
       "data": "2026-09-03",
       "csv": "cidades_br",
       "titulo": "Cidades mais populosas do Brasil",
-      "fonte": "https://www.ibge.gov.br/cidades-e-estados"
+      "fonte": "https://pt.wikipedia.org/wiki/Lista_de_munic%C3%ADpios_do_Brasil_por_popula%C3%A7%C3%A3o_(2022)"
     },
     {
       "data": "2026-09-04",
-      "csv": "steam_pico_diario",
-      "titulo": "Jogos da Steam com maior pico diário de jogadores",
-      "fonte": "https://steamdb.info/charts/"
+      "csv": "ranking_cbf",
+      "titulo": "Ranking Nacional de Clubes de futebol masculino 2026 da CBF",
+      "fonte": "https://www.rankingcbf.com/"
     },
     {
       "data": "2026-09-05",
-      "csv": "top500_spotify",
-      "titulo": "Músicas mais ouvidas da história no Spotify",
-      "fonte": "https://spotifycharts.com/"
+      "csv": "paises_pop",
+      "titulo": "Países mais populosos do mundo",
+      "fonte": "https://www.worldometers.info/pt/geografia/paises-do-mundo/"
+    },
+    {
+      "data": "2026-09-06",
+      "csv": "fav_letterboxd",
+      "titulo": "Filmes mais presentes entre os '4 favoritos' dos usuários do Letterboxd",
+      "fonte": "https://letterboxd.com/official/list/top-250-films-with-the-most-fans/"
+    },
+    {
+      "data": "2026-09-07",
+      "csv": "ouvintes_mensais_spotify",
+      "titulo": "Artistas com maior número de ouvintes mensais no Spotify",
+      "fonte": "https://chartmasters.org/pt/maior-numero-de-ouvintes-mensais-no-spotify/"
+    },
+    {
+      "data": "2026-09-08",
+      "csv": "paises_area",
+      "titulo": "Maiores países do mundo por área",
+      "fonte": "https://www.worldometers.info/pt/geografia/maiores-paises-do-mundo/"
     }
   ]
 }

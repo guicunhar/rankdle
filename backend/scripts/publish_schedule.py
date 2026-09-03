@@ -27,8 +27,10 @@ Uso (rode de dentro de `backend/`, com o venv ativo):
     python scripts/publish_schedule.py --only 2026-09-03
     python scripts/publish_schedule.py --force      # reimporta mesmo se já existe (re-sorteia o gabarito!)
 
-Por padrão, itens cuja data+tema já têm desafio no banco são pulados, para
-não re-sortear a resposta de um dia já publicado. Use --force para sobrepor.
+Por padrão, itens cuja data+tema já têm desafio no banco NÃO são
+reimportados (a resposta sorteada continua a mesma), mas título e fonte
+são sincronizados com o JSON. Use --force para reimportar o CSV do zero
+(re-sorteia o gabarito).
 
 A string do banco de produção sai de `backend/.env.prod.local` (fora do
 git); se RANKDLE_DATABASE_URL já estiver no ambiente, ela tem prioridade.
@@ -155,8 +157,27 @@ def main() -> None:
                 else None
             )
             if existing is not None and not args.force:
-                print(f"pula   {challenge_date} [{theme_slug}] — já existe (challenge_id={existing.id})")
-                pulados += 1
+                # Dia já publicado: não reimporta itens nem re-sorteia o gabarito,
+                # mas mantém título e fonte em dia com o calendário.
+                nova_fonte = (entry["fonte"] or "").strip() or None
+                mudancas = []
+                if existing.source_url != nova_fonte:
+                    mudancas.append("fonte")
+                if existing.subtheme_title != entry["titulo"]:
+                    mudancas.append("título")
+                if not mudancas:
+                    print(f"pula   {challenge_date} [{theme_slug}] — já existe (challenge_id={existing.id})")
+                    pulados += 1
+                    continue
+                if args.dry_run:
+                    print(f"(dry)  {challenge_date} [{theme_slug}] atualiza {', '.join(mudancas)} (challenge_id={existing.id})")
+                    publicados += 1
+                    continue
+                existing.source_url = nova_fonte
+                existing.subtheme_title = entry["titulo"]
+                db.commit()
+                print(f"upd    {challenge_date} [{theme_slug}] {', '.join(mudancas)} (challenge_id={existing.id})")
+                publicados += 1
                 continue
 
             if args.dry_run:
@@ -189,7 +210,7 @@ def main() -> None:
     finally:
         db.close()
 
-    verbo = "seriam publicados" if args.dry_run else "publicados"
+    verbo = "seriam publicados/atualizados" if args.dry_run else "publicados/atualizados"
     print(f"\n{publicados} {verbo} · {pulados} pulados")
 
 
